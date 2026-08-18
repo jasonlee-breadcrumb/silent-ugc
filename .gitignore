@@ -1,0 +1,8 @@
+.DS_Store
+*.mp4
+*.mov
+*.jpg
+*.jpeg
+*.png
+assets/
+scratch/
