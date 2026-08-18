@@ -41,6 +41,8 @@ Call `arcads_list_products`. If it responds, note the productId and continue. If
 > 3. Claude desktop/web: Settings → Connectors → add the Arcads connector and authorize.
 > Tell me when it's added and I'll re-verify.
 
+**No other skill is required to "watch" the source video.** This skill handles video itself: `yt-dlp` downloads it, `ffmpeg` extracts frames, and the Read tool renders those JPEGs directly. Do not reach for a separate video-watching skill — sampled-frame tools (typically 1-2 fps) will miss the micro-timing that Phase 3 depends on, and these hooks are silent, so there is no transcript worth fetching.
+
 ## Phase 3 — Performance DNA extraction (do this BEFORE any generation)
 
 The actor image gives you a FACE. This gives you a PERSONALITY. Every video on an account must inherit the source creator's performance, not a generic reaction. This step is what separates believable UGC from overacted AI slop.
@@ -90,7 +92,14 @@ Never start generation without confirmation.
 ## Phase 6 — The pipeline (per video)
 
 ### 1. Download and split
-`yt-dlp` the TikTok. Its JS challenge is flaky — retry up to 5 times with 3s sleeps. Profile URL instead of a video URL? List with `--flat-playlist` and pick the ad-format video (or ask).
+TikTok's JS challenge fails intermittently — always retry rather than giving up on the first error:
+
+```bash
+for i in 1 2 3 4 5; do yt-dlp -o "video.%(ext)s" "<TIKTOK_URL>" && break; sleep 3; done
+```
+
+Given a profile URL instead of a video URL, list first and pick the ad-format video (or ask):
+`yt-dlp --flat-playlist --print "%(id)s | %(view_count)s views | %(title).70s" --playlist-end 20 "<PROFILE_URL>"`
 
 Find the hook/demo boundary: `ffmpeg -i v.mp4 -vf "select='gt(scene,0.3)',metadata=print" -an -f null -` → first big scene score. Verify visually. Keep the hook only, muted, re-encoded for frame accuracy:
 `ffmpeg -i v.mp4 -t <cut> -an -c:v libx264 -crf 18 -preset fast hook.mp4`
